@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Smart Parking Dashboard</title>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f4f7f6; margin: 0; padding: 20px; color: #333; }
+        h1 { color: #2c3e50; text-align: center; }
+        .container { display: flex; flex-direction: column; gap: 20px; max-width: 1200px; margin: 0 auto; }
+        .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px; }
+        .stat-card { background: linear-gradient(135deg, #2980b9, #2c3e50); color: white; padding: 20px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); text-align: center; }
+        .stat-card h3 { margin: 0 0 10px 0; font-size: 1.2em; opacity: 0.9; }
+        .stat-card .value { font-size: 2em; font-weight: bold; margin-bottom: 5px; }
+        .stat-card .fee-value { font-size: 1.2em; color: #f1c40f; }
+        
+        .tables-container { display: flex; gap: 20px; flex-wrap: wrap; }
+        .card { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); flex: 1; min-width: 300px; }
+        .card h2 { margin-top: 0; color: #2980b9; border-bottom: 2px solid #ecf0f1; padding-bottom: 10px; }
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+        th, td { text-align: left; padding: 12px; border-bottom: 1px solid #ddd; }
+        th { background-color: #f8f9fa; }
+        .btn { display: inline-block; padding: 10px 20px; font-size: 16px; cursor: pointer; text-align: center; text-decoration: none; outline: none; color: #fff; background-color: #4CAF50; border: none; border-radius: 5px; box-shadow: 0 4px #999; margin-bottom: 20px;}
+        .btn:hover {background-color: #3e8e41}
+        .btn:active { background-color: #3e8e41; box-shadow: 0 2px #666; transform: translateY(2px); }
+        .fee { font-weight: bold; color: #27ae60; }
+        .badge { background: #3498db; color: white; padding: 4px 8px; border-radius: 12px; font-size: 0.85em; }
+    </style>
+</head>
+<body>
+
+    <h1>Automated Smart Parking System</h1>
+
+    <div class="container">
+        <!-- New Stats Row -->
+        <div class="stats-grid">
+            <div class="stat-card">
+                <h3>Daily</h3>
+                <div class="value">{{ stats.daily.count }} <span style="font-size: 0.5em">Vehicles</span></div>
+                <div class="fee-value">RM {{ "%.2f"|format(stats.daily.fee) }}</div>
+            </div>
+            <div class="stat-card">
+                <h3>Weekly</h3>
+                <div class="value">{{ stats.weekly.count }} <span style="font-size: 0.5em">Vehicles</span></div>
+                <div class="fee-value">RM {{ "%.2f"|format(stats.weekly.fee) }}</div>
+            </div>
+            <div class="stat-card">
+                <h3>Monthly</h3>
+                <div class="value">{{ stats.monthly.count }} <span style="font-size: 0.5em">Vehicles</span></div>
+                <div class="fee-value">RM {{ "%.2f"|format(stats.monthly.fee) }}</div>
+            </div>
+            <div class="stat-card">
+                <h3>Accumulative</h3>
+                <div class="value">{{ stats.accumulative.count }} <span style="font-size: 0.5em">Vehicles</span></div>
+                <div class="fee-value">RM {{ "%.2f"|format(stats.accumulative.fee) }}</div>
+            </div>
+        </div>
+
+        <div style="text-align: center; margin-top: 10px;">
+            <button class="btn" onclick="window.open('/kiosk', '_blank')">Open Kiosk UI</button>
+        </div>
+
+        <div class="tables-container">
+            <div class="card">
+                <h2>Vehicles Parked <span class="badge">{{ parked_vehicles|length }}</span></h2>
+                <table>
+                    <tr>
+                        <th>Plate Number</th>
+                        <th>Entry Time</th>
+                        <th>Duration (hrs)</th>
+                    </tr>
+                    {% for v in parked_vehicles %}
+                    <tr>
+                        <td><strong>{{ v.plate_num }}</strong></td>
+                        <td><script>document.write(new Date({{ v.entry_time }} * 1000).toLocaleString())</script></td>
+                        <td><script>document.write(Math.floor(({{ current_time }} - {{ v.entry_time }}) / 3600))</script></td>
+                    </tr>
+                    {% else %}
+                    <tr><td colspan="3">No vehicles parked.</td></tr>
+                    {% endfor %}
+                </table>
+            </div>
+
+            <div class="card">
+                <h2>Recent Exits</h2>
+                <table>
+                    <tr>
+                        <th>Plate Number</th>
+                        <th>Exit Time</th>
+                        <th>Fee Collected</th>
+                    </tr>
+                    {% for r in recent_exits %}
+                    <tr>
+                        <td><strong>{{ r.plate_num }}</strong></td>
+                        <td><script>document.write(new Date({{ r.exit_time }} * 1000).toLocaleString())</script></td>
+                        <td class="fee">RM {{ "%.2f"|format(r.fee) }}</td>
+                    </tr>
+                    {% else %}
+                    <tr><td colspan="3">No recent exits.</td></tr>
+                    {% endfor %}
+                </table>
+            </div>
+        </div>
+    </div>
+
+</body>
+</html>

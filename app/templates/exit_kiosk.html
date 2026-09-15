@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Exit Kiosk</title>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #1a1a1a; color: #fff; margin: 0; display: flex; align-items: center; justify-content: center; height: 100vh; overflow: hidden; }
+        .container { text-align: center; width: 90%; max-width: 600px; background: #2a2a2a; padding: 40px; border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
+        .state { display: none; }
+        .state.active { display: block; }
+        h1 { font-size: 3em; margin: 0 0 20px 0; color: #f1c40f; }
+        .plate { font-size: 4em; font-weight: bold; background: #000; color: #fff; padding: 10px 30px; border: 4px solid #fff; border-radius: 10px; display: inline-block; margin-bottom: 20px; letter-spacing: 2px;}
+        .fee { font-size: 5em; color: #e74c3c; margin: 20px 0; font-weight: bold; }
+        .duration { font-size: 1.5em; color: #aaa; margin-bottom: 20px; }
+        .qr-code { width: 300px; height: 300px; background: #fff; border-radius: 10px; padding: 10px; margin: 0 auto 20px auto; }
+        .qr-code img { width: 100%; height: 100%; }
+        .btn-test { background: #3498db; color: white; border: none; padding: 15px 30px; font-size: 1.2em; border-radius: 10px; cursor: pointer; margin-top: 20px; transition: 0.2s;}
+        .btn-test:hover { background: #2980b9; }
+        .success-icon { font-size: 8em; color: #2ecc71; margin-bottom: 20px; }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <!-- Idle State -->
+        <div id="state-idle" class="state active">
+            <h1>Welcome</h1>
+            <p style="font-size: 2em; color: #ccc;">Please drive forward slowly to the barrier.</p>
+        </div>
+
+        <!-- Payment State -->
+        <div id="state-payment" class="state">
+            <div class="plate" id="pay-plate">ABC1234</div>
+            <div class="duration">Duration: <span id="pay-duration">60</span> mins</div>
+            <div class="qr-code">
+                <img id="pay-qr" src="" alt="DuitNow QR">
+            </div>
+            <div style="font-size: 1.5em; color: #ccc;">Scan DuitNow QR to Pay</div>
+            <div class="fee">RM <span id="pay-amount">0.00</span></div>
+            <button class="btn-test" onclick="simulatePayment()">Simulate Payment (Dev)</button>
+        </div>
+
+        <!-- Success State -->
+        <div id="state-success" class="state">
+            <div class="success-icon">✔</div>
+            <h1 style="color: #2ecc71;">Payment Successful!</h1>
+            <p style="font-size: 2em; color: #ccc;">Thank you, have a safe trip. Gate opening...</p>
+        </div>
+    </div>
+
+    <script>
+        let ws;
+        let currentOrderId = null;
+
+        function connect() {
+            // Reconnect logic
+            const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+            const wsUrl = protocol + '//' + window.location.host + '/ws/exit-kiosk';
+            ws = new WebSocket(wsUrl);
+
+            ws.onopen = function() {
+                console.log('WebSocket connected');
+            };
+
+            ws.onmessage = function(event) {
+                const msg = JSON.parse(event.data);
+                console.log('Received:', msg);
+
+                if (msg.event === 'SHOW_PAYMENT') {
+                    showPayment(msg.data);
+                } else if (msg.event === 'PAYMENT_SUCCESS') {
+                    showSuccess();
+                }
+            };
+
+            ws.onclose = function() {
+                console.log('WebSocket disconnected. Reconnecting in 2s...');
+                setTimeout(connect, 2000);
+            };
+        }
+
+        function switchState(stateId) {
+            document.querySelectorAll('.state').forEach(el => el.classList.remove('active'));
+            document.getElementById(stateId).classList.add('active');
+        }
+
+        function showPayment(data) {
+            document.getElementById('pay-plate').innerText = data.plate_num;
+            document.getElementById('pay-duration').innerText = data.duration_minutes;
+            document.getElementById('pay-amount').innerText = data.amount.toFixed(2);
+            document.getElementById('pay-qr').src = data.qr_image_data;
+            currentOrderId = data.order_id;
+            switchState('state-payment');
+        }
+
+        function showSuccess() {
+            switchState('state-success');
+            setTimeout(() => {
+                switchState('state-idle');
+                currentOrderId = null;
+            }, 5000);
+        }
+
+        function simulatePayment() {
+            if (!currentOrderId) return;
+            fetch('/api/payment/mock-pay/' + currentOrderId, { method: 'POST' })
+                .then(r => r.json())
+                .then(data => console.log('Mock payment response:', data))
+                .catch(err => alert('Mock payment failed'));
+        }
+
+        connect();
+    </script>
+</body>
+</html>
