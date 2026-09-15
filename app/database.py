@@ -1,7 +1,8 @@
 import aiosqlite
 import os
 
-DB_PATH = os.path.join(os.path.dirname(__file__), "..", "parking_records.db")
+DATA_DIR = os.getenv("DATA_DIR", os.path.join(os.path.dirname(__file__), ".."))
+DB_PATH = os.path.join(DATA_DIR, "parking_records.db")
 
 async def init_db():
     async with aiosqlite.connect(DB_PATH) as db:

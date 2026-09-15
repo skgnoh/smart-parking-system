@@ -1,0 +1,16 @@
+version: '3.8'
+
+services:
+  parking-backend:
+    build: .
+    container_name: parking-backend
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    volumes:
+      # Map a local 'data' folder to the container's '/app/data'
+      # This ensures your SQLite database survives container restarts and rebuilds
+      - ./data:/app/data
+    environment:
+      # Explicitly tell the code to look for the DB in /app/data
+      - DATA_DIR=/app/data
